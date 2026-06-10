@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+
+# Database
+*.db
+*.sqlite3
+
+# ML Models
+models/saved/*.pth
+models/saved/*.pkl
+
+# Data
+data/*.csv
+
+# IDEs
+.vscode/
+.idea/
