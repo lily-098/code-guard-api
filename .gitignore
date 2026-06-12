@@ -6,18 +6,41 @@ __pycache__/
 # Virtual Environment
 venv/
 env/
+.env
 
 # Database
 *.db
 *.sqlite3
 
-# ML Models
-models/saved/*.pth
-models/saved/*.pkl
+# ML Models — saved weights (too large for git)
+models/saved/
+# Keep the directory itself
+!models/saved/.gitkeep
 
-# Data
-data/*.csv
+# Generated Data
+data/
+# Keep the directory itself
+!data/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
 
 # IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build
+dist/
+build/
+*.egg-info/
