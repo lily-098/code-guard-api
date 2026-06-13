@@ -14,7 +14,7 @@ const TRANSLATIONS = {
     heroBadge:        'AI-Powered Threat Detection',
     heroLine1:        'Protect Your Codebase',
     heroLine2:        'From The Inside Out',
-    heroDesc:         'Upload developer activity logs and our ML models instantly surface suspicious patterns — mass deletions, off-hours commits, and file conflicts — before they cause damage.',
+    heroDesc:         'Upload developer activity logs across GitHub, Google Docs, and Google Colab. Our ML models instantly surface suspicious patterns — mass deletions, off-hours edits, and file conflicts — before they cause damage.',
     heroAnalyzeBtn:   'Analyze Logs',
     heroLearnBtn:     'CSV Format Guide',
     uploadTitle:      'Upload Activity Logs',
@@ -94,7 +94,7 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
     heroBadge:        'AI-आधारित खतरा पहचान प्रणाली',
     heroLine1:        'अपने कोडबेस को',
     heroLine2:        'अंदर से बाहर तक सुरक्षित करें',
-    heroDesc:         'डेवलपर गतिविधि लॉग अपलोड करें और हमारे ML मॉडल तुरंत संदिग्ध पैटर्न पहचानते हैं — जैसे बड़े पैमाने पर कोड हटाना, असामान्य समय पर कमिट, और फ़ाइल विवाद।',
+    heroDesc:         'GitHub, Google Docs, और Google Colab पर डेवलपर गतिविधि लॉग अपलोड करें। हमारे ML मॉडल तुरंत संदिग्ध पैटर्न पहचानते हैं — जैसे बड़े पैमाने पर कोड हटाना, असामान्य समय पर संपादन, और फ़ाइल विवाद।',
     heroAnalyzeBtn:   'लॉग का विश्लेषण करें',
     heroLearnBtn:     'CSV फॉर्मेट गाइड',
     uploadTitle:      'गतिविधि लॉग अपलोड करें',
@@ -406,7 +406,8 @@ function bindEvents() {
   // Nav links
   els.navAnalyze.addEventListener('click', e => {
     e.preventDefault();
-    document.querySelector('.upload-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target = $('githubPanel') || document.querySelector('.upload-panel');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setActiveNav(els.navAnalyze);
   });
   els.navDashboard.addEventListener('click', e => {
@@ -422,7 +423,8 @@ function bindEvents() {
 
   // Hero buttons
   els.heroAnalyzeBtn.addEventListener('click', () => {
-    document.querySelector('.upload-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target = $('githubPanel') || document.querySelector('.upload-panel');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   els.heroLearnBtn.addEventListener('click', () => {
     els.modalOverlay.classList.remove('hidden');
