@@ -6,6 +6,7 @@ class AnomalyResult(BaseModel):
     timestamp: datetime
     developer_name: str
     file_path: Optional[str]
+    platform: Optional[str] = "GitHub"
     severity: str
     description: str
 

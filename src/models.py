@@ -20,6 +20,7 @@ class ProjectFile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filepath = Column(String, unique=True, index=True)
+    platform = Column(String, default="GitHub", index=True)
 
 class ActivityLog(Base):
     __tablename__ = "activity_logs"

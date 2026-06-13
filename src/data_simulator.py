@@ -18,10 +18,15 @@ def generate_mock_data(num_developers=5, num_files=20, num_logs=1000):
         db.add(dev)
         developers.append(dev)
     
-    # Create files
+    # Create files for different platforms
     files = []
     for i in range(1, num_files + 1):
-        file = ProjectFile(filepath=f"src/module_{i}/main.py")
+        if i % 3 == 0:
+            file = ProjectFile(filepath=f"GoogleDocs/Document_{i}.gdoc", platform="Google Docs")
+        elif i % 3 == 1:
+            file = ProjectFile(filepath=f"GoogleColab/Notebook_{i}.ipynb", platform="Google Colab")
+        else:
+            file = ProjectFile(filepath=f"src/module_{i}/main.py", platform="GitHub")
         db.add(file)
         files.append(file)
     
@@ -43,8 +48,8 @@ def generate_mock_data(num_developers=5, num_files=20, num_logs=1000):
         file = random.choice(files)
         
         if is_anomaly:
-            # Type 1: Mass deletion (Warning/Critical)
-            # Type 2: Rapid overwrite / conflict (Critical)
+            # Type 1: Mass deletion / overwrite
+            # Type 2: Off hours access
             anomaly_type = random.choice(["mass_delete", "off_hours"])
             if anomaly_type == "mass_delete":
                 action = ActionType.DELETE
@@ -100,6 +105,7 @@ def export_to_csv(filepath="data/raw_logs.csv"):
             "timestamp": log.timestamp,
             "developer_id": log.developer_id,
             "file_id": log.file_id,
+            "platform": log.file.platform if log.file else "GitHub",
             "action_type": log.action_type.value,
             "lines_added": log.lines_added,
             "lines_deleted": log.lines_deleted

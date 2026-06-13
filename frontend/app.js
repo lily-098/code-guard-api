@@ -77,7 +77,7 @@ Two — Off-hours activity, where code is committed late at night, outside norma
 Three — File conflicts, where multiple developers modify the same file simultaneously.
 
 How to use this system:
-Step 1 — Make sure the backend API is running. Open a terminal and run: uvicorn api.main:app --port 8080.
+Step 1 — Make sure the backend API is running. Open a terminal and run: uvicorn api.main:app --port 8005.
 Step 2 — Upload a CSV file containing your activity logs using the upload panel.
 Step 3 — Click the Run Anomaly Detection button.
 Step 4 — Review the results. Critical alerts shown in red need immediate attention. Warnings shown in amber should be investigated.
@@ -157,7 +157,7 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
 तीसरा — फ़ाइल विवाद, जहाँ कई डेवलपर्स एक ही समय में एक ही फ़ाइल में बदलाव करते हैं।
 
 इस प्रणाली का उपयोग कैसे करें:
-पहला चरण — सुनिश्चित करें कि बैकएंड API चल रहा है। टर्मिनल खोलें और चलाएं: uvicorn api.main:app --port 8080।
+पहला चरण — सुनिश्चित करें कि बैकएंड API चल रहा है। टर्मिनल खोलें और चलाएं: uvicorn api.main:app --port 8005।
 दूसरा चरण — अपलोड पैनल का उपयोग करके अपनी गतिविधि लॉग वाली CSV फ़ाइल अपलोड करें।
 तीसरा चरण — "असामान्य गतिविधि पहचानें" बटन पर क्लिक करें।
 चौथा चरण — परिणाम देखें। लाल रंग में दिखाई गई गंभीर चेतावनियों पर तुरंत ध्यान दें। पीले रंग की सावधानियों की भी जाँच करें।
@@ -166,7 +166,7 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
 };
 
 // ── CONFIG & STATE ────────────────────────────────────────────
-const DEFAULT_API = 'http://localhost:8080';
+const DEFAULT_API = 'http://localhost:8005';
 const PAGE_SIZE   = 8;
 
 const state = {
@@ -175,6 +175,7 @@ const state = {
   allAnomalies:  [],
   filteredAnoms: [],
   filter:        'all',
+  platformFilter: 'all',
   page:          1,
   lastResponse:  null,
   speaking:      false,
@@ -235,6 +236,9 @@ const els = {
   toastContainer:    $('toastContainer'),
   modalOverlay:      $('modalOverlay'),
   modalClose:        $('modalClose'),
+  githubRepoName:    $('githubRepoName'),
+  btnAnalyzeGithub:  $('btnAnalyzeGithub'),
+  platformFilterTabs:$('platformFilterTabs'),
 };
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -459,10 +463,24 @@ function bindEvents() {
     if (!tab) return;
     state.filter = tab.dataset.filter;
     state.page   = 1;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#filterTabs .filter-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     applyFilterAndRender();
   });
+
+  // Platform Filter tabs
+  els.platformFilterTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.filter-tab');
+    if (!tab) return;
+    state.platformFilter = tab.dataset.platform;
+    state.page   = 1;
+    document.querySelectorAll('#platformFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    applyFilterAndRender();
+  });
+
+  // Analyze Github Repo
+  els.btnAnalyzeGithub.addEventListener('click', runGitHubAnalysis);
 
   // Export
   els.btnExport.addEventListener('click', exportJSON);
@@ -588,6 +606,85 @@ async function runAnalysis() {
   }
 }
 
+async function runGitHubAnalysis() {
+  const repo = els.githubRepoName.value.trim();
+  if (!repo) return;
+  const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
+
+  els.btnAnalyzeGithub.disabled = true;
+  const originalText = els.btnAnalyzeGithub.textContent;
+  els.btnAnalyzeGithub.textContent = state.lang === 'hi' ? 'विश्लेषण...' : 'Analyzing...';
+
+  try {
+    const res = await fetch(`${base}/fetch-github/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        repo_name: repo,
+        limit: 15
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Server error ${res.status}`);
+    }
+    const data = await res.json();
+
+    if (data.status === 'error') {
+      showToast('error',
+        state.lang === 'hi' ? 'विश्लेषण विफल' : 'Analysis failed',
+        data.message || ''
+      );
+      return;
+    }
+
+    state.lastResponse   = data;
+    state.allAnomalies   = data.anomalies || [];
+    state.filter         = 'all';
+    state.platformFilter = 'all';
+    state.page           = 1;
+
+    // Reset UI active states
+    document.querySelectorAll('#filterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#filterTabs .filter-tab[data-filter="all"]').classList.add('active');
+    document.querySelectorAll('#platformFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#platformFilterTabs .filter-tab[data-platform="all"]').classList.add('active');
+
+    renderStats(data);
+    applyFilterAndRender();
+    renderTimeline();
+
+    setTimeout(() => {
+      els.resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+
+    const count = data.anomalies_detected;
+    const crit  = state.allAnomalies.filter(a => a.severity === 'Critical').length;
+    if (count === 0) {
+      showToast('success', t('allClear'), t('noneFound'));
+    } else {
+      showToast(crit > 0 ? 'error' : 'info',
+        `${count} ${count === 1 ? t('anomaly') : t('anomalies')}`,
+        crit > 0
+          ? (state.lang === 'hi' ? `${crit} गंभीर समस्याएं तुरंत ध्यान चाहती हैं!` : `${crit} critical issue(s) need immediate attention!`)
+          : (state.lang === 'hi' ? 'नीचे सावधानी घटनाओं की समीक्षा करें।' : 'Review the warning events below.')
+      );
+    }
+  } catch (err) {
+    showToast('error',
+      state.lang === 'hi' ? 'कनेक्शन विफल' : 'Connection failed',
+      err.message || (state.lang === 'hi' ? 'API से कनेक्ट नहीं हो सका।' : 'Unable to reach the API.')
+    );
+  } finally {
+    els.btnAnalyzeGithub.disabled = false;
+    els.btnAnalyzeGithub.textContent = originalText;
+  }
+}
+
 // ── RENDER STATS ──────────────────────────────────────────────
 function renderStats(data) {
   const anomalies = data.anomalies || [];
@@ -617,9 +714,11 @@ function animateCount(el, target) {
 
 // ── FILTER & RENDER ───────────────────────────────────────────
 function applyFilterAndRender() {
-  state.filteredAnoms = state.filter === 'all'
-    ? [...state.allAnomalies]
-    : state.allAnomalies.filter(a => a.severity === state.filter);
+  state.filteredAnoms = state.allAnomalies.filter(a => {
+    const matchesSeverity = state.filter === 'all' || a.severity === state.filter;
+    const matchesPlatform = state.platformFilter === 'all' || a.platform === state.platformFilter;
+    return matchesSeverity && matchesPlatform;
+  });
 
   const total      = state.filteredAnoms.length;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
@@ -650,17 +749,20 @@ function anomalyCardHTML(a, idx) {
   const dev = escHTML(a.developer_name);
   const fp  = escHTML(a.file_path || '—');
   const desc = escHTML(a.description);
+  const plat = escHTML(a.platform || 'GitHub');
+  const platClass = plat.toLowerCase().replace(' ', '-');
   const svgCrit = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
   const svgWarn = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
   return `
     <div class="anomaly-card ${a.severity}" style="animation-delay:${idx * 60}ms">
       <div class="anomaly-severity-icon">${a.severity === 'Critical' ? svgCrit : svgWarn}</div>
       <div class="anomaly-body">
-        <div class="anomaly-top">
+        <div class="anomaly-top" style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
           <span class="severity-badge ${a.severity}">${escHTML(a.severity)}</span>
-          <span class="anomaly-desc">${desc}</span>
+          <span class="platform-badge ${platClass}">${plat}</span>
+          <span class="anomaly-desc" style="font-weight: 500;">${desc}</span>
         </div>
-        <div class="anomaly-meta">
+        <div class="anomaly-meta" style="margin-top: 0.5rem;">
           <div class="meta-item">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span>${dev}</span>
