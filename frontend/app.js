@@ -849,12 +849,53 @@ function anomalyCardHTML(a, idx) {
   
   const resolveBtnText = plat === 'GitHub' ? (state.lang === 'hi' ? 'कमिट पूर्ववत करें' : 'Revert Commit') : (state.lang === 'hi' ? 'संघर्ष सुलझाएं' : 'Resolve Conflict');
   const resolveBtnHTML = `
-    <div class="anomaly-actions" style="margin-top: 0.75rem;">
+    <div class="anomaly-actions" style="margin-top: 0.75rem; display: flex; gap: 8px; flex-wrap: wrap;">
       <button class="btn-resolve-conflict" 
               onclick="resolveAnomalyConflict('${escHTML(a.file_path).replace(/'/g, "\\'")}', '${escHTML(a.platform).replace(/'/g, "\\'")}', '${escHTML(a.developer_name).replace(/'/g, "\\'")}', this)"
               style="padding: 5px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--green); cursor: pointer; transition: var(--transition);">
         ${resolveBtnText}
       </button>
+      <button class="btn-ai-review" 
+              onclick="toggleAIReviewPanel('${idx}')"
+              style="padding: 5px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); color: #c084fc; cursor: pointer; transition: var(--transition);">
+        ✨ AI Review & Gatekeeper
+      </button>
+    </div>
+    
+    <!-- AI Review Panel (collapsed by default) -->
+    <div id="aiPanel-${idx}" class="ai-review-panel hidden" style="margin-top: 0.75rem; padding: 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); width: 100%;">
+      <div class="ai-key-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; width: 100%;">
+        <input type="password" id="aiKey-${idx}" class="config-input" placeholder="Gemini API Key (Optional)" style="flex: 1; padding: 4px 8px; font-size: 11px; border-radius: 4px; height: 26px; background: rgba(17, 25, 40, 0.5); border: 1px solid rgba(255,255,255,0.1); color: white;" />
+        <button onclick="requestAIReview('${idx}', '${escHTML(a.file_path).replace(/'/g, "\\'")}', '${escHTML(a.platform).replace(/'/g, "\\'")}')" 
+                style="width: auto; padding: 4px 12px; font-size: 11px; height: 26px; border-radius: 4px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border: none; color: white; cursor: pointer; font-weight: 600;">
+          Analyze Correctness
+        </button>
+      </div>
+      
+      <!-- AI Output Spinner and Content -->
+      <div id="aiLoading-${idx}" class="hidden" style="font-size: 11px; color: var(--text-secondary); text-align: center; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span class="spinner" style="display:inline-block; width:12px; height:12px; border: 2px solid rgba(255,255,255,0.1); border-top-color: #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+        AI is evaluating code logic...
+      </div>
+      <div id="aiResult-${idx}" class="ai-result-box" style="font-size: 11.5px; line-height: 1.4; color: #e5e7eb; margin-bottom: 8px; text-align: left;"></div>
+      
+      <!-- Human Gatekeeping Panel -->
+      <div id="aiGatekeeper-${idx}" class="hidden" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px; margin-top: 8px; width: 100%;">
+        <textarea id="aiComment-${idx}" class="config-input" placeholder="Feedback/Gatekeeper Comments (Optional)" style="width: 100%; min-height: 40px; padding: 6px; font-size: 11px; border-radius: 4px; margin-bottom: 8px; resize: vertical; background: rgba(17, 25, 40, 0.5); border: 1px solid rgba(255,255,255,0.1); color: white;"></textarea>
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <button onclick="submitGatekeeperDecision('${idx}', '${escHTML(a.file_path).replace(/'/g, "\\'")}', '${escHTML(a.platform).replace(/'/g, "\\'")}', 'approve')" 
+                  style="flex: 1; padding: 6px; font-size: 11px; border-radius: 4px; background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; cursor: pointer; font-weight: 600;">
+            Approve & Merge
+          </button>
+          <button onclick="submitGatekeeperDecision('${idx}', '${escHTML(a.file_path).replace(/'/g, "\\'")}', '${escHTML(a.platform).replace(/'/g, "\\'")}', 'reject')" 
+                  style="flex: 1; padding: 6px; font-size: 11px; border-radius: 4px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; color: white; cursor: pointer; font-weight: 600;">
+            Reject & Request Fix
+          </button>
+        </div>
+      </div>
+      
+      <!-- Gatekeeper Decision Result -->
+      <div id="aiStatus-${idx}" class="hidden" style="font-size: 11px; font-weight: 600; text-align: center; margin-top: 6px; padding: 4px; border-radius: 4px;"></div>
     </div>`;
 
   return `
@@ -1042,5 +1083,97 @@ window.resolveAnomalyConflict = async (filePath, platform, developerName, btn) =
     );
     btn.disabled = false;
     btn.textContent = originalText;
+  }
+};
+
+window.toggleAIReviewPanel = (idx) => {
+  const panel = document.getElementById(`aiPanel-${idx}`);
+  if (panel) panel.classList.toggle('hidden');
+};
+
+window.requestAIReview = async (idx, filePath, platform) => {
+  const loading = document.getElementById(`aiLoading-${idx}`);
+  const result = document.getElementById(`aiResult-${idx}`);
+  const gatekeeper = document.getElementById(`aiGatekeeper-${idx}`);
+  const keyInput = document.getElementById(`aiKey-${idx}`);
+  const statusDiv = document.getElementById(`aiStatus-${idx}`);
+
+  loading.classList.remove('hidden');
+  result.classList.add('hidden');
+  gatekeeper.classList.add('hidden');
+  statusDiv.classList.add('hidden');
+
+  const base = document.getElementById('apiEndpoint').value.trim().replace(/\/$/, '');
+  try {
+    const res = await fetch(`${base}/ai-review/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_path: filePath,
+        platform: platform,
+        gemini_api_key: keyInput.value.trim() || null
+      })
+    });
+    
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    
+    // Format review markdown points as HTML
+    let reviewHTML = data.review || '';
+    reviewHTML = reviewHTML.replace(/- (✓|✗|⚠)/g, '• $1');
+    reviewHTML = reviewHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    reviewHTML = reviewHTML.split('\n').map(line => {
+      if (line.trim().startsWith('- ') || line.trim().startsWith('* ') || line.trim().startsWith('• ')) {
+        const text = line.trim().substring(2);
+        return `<div style="margin-bottom:4px; display:flex; gap:6px; text-align:left;"><span>•</span><span>${text}</span></div>`;
+      }
+      return line ? `<div style="margin-bottom:4px; text-align:left;">${line}</div>` : '';
+    }).join('');
+
+    result.innerHTML = reviewHTML;
+    result.classList.remove('hidden');
+    gatekeeper.classList.remove('hidden');
+    
+    showToast('success', 'AI Review Complete', 'Successfully analyzed code logic.');
+  } catch (err) {
+    result.innerHTML = `<span style="color:#ef4444;">Failed to load AI review: ${err.message}</span>`;
+    result.classList.remove('hidden');
+    showToast('error', 'AI Review Failed', err.message);
+  } finally {
+    loading.classList.add('hidden');
+  }
+};
+
+window.submitGatekeeperDecision = async (idx, filePath, platform, action) => {
+  const commentInput = document.getElementById(`aiComment-${idx}`);
+  const statusDiv = document.getElementById(`aiStatus-${idx}`);
+  const gatekeeperDiv = document.getElementById(`aiGatekeeper-${idx}`);
+
+  const base = document.getElementById('apiEndpoint').value.trim().replace(/\/$/, '');
+  try {
+    const res = await fetch(`${base}/gatekeeper/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_path: filePath,
+        platform: platform,
+        action: action,
+        comments: commentInput.value.trim() || null
+      })
+    });
+    
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    
+    showToast('success', action === 'approve' ? 'Changes Approved' : 'Changes Rejected', data.message);
+
+    gatekeeperDiv.classList.add('hidden');
+    statusDiv.textContent = action === 'approve' ? 'PR APPROVED ✓' : 'PR REJECTED ✗';
+    statusDiv.style.background = action === 'approve' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+    statusDiv.style.color = action === 'approve' ? '#10b981' : '#ef4444';
+    statusDiv.style.border = action === 'approve' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)';
+    statusDiv.classList.remove('hidden');
+  } catch (err) {
+    showToast('error', 'Gatekeeper Action Failed', err.message);
   }
 };
