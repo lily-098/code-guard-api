@@ -24,6 +24,7 @@ def fetch_real_github_commits(repo_identifier: str, limit: int = 15):
     db = SessionLocal()
     
     logs_added = []
+    processed_log_ids = []
     
     try:
         # Loop over commits (up to limit)
@@ -87,7 +88,11 @@ def fetch_real_github_commits(repo_identifier: str, limit: int = 15):
                         lines_deleted=deletions
                     )
                     db.add(log)
+                    db.flush()
                     logs_added.append(log)
+                    processed_log_ids.append(log.id)
+                else:
+                    processed_log_ids.append(existing_log.id)
         
         db.commit()
     except Exception as e:
@@ -96,4 +101,4 @@ def fetch_real_github_commits(repo_identifier: str, limit: int = 15):
     finally:
         db.close()
         
-    return len(logs_added)
+    return processed_log_ids

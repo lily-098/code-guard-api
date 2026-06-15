@@ -150,12 +150,12 @@ async def fetch_github(request: GitHubRepoRequest):
         
     try:
         from src.github_fetcher import fetch_real_github_commits
-        # Fetch and store in the DB
-        fetch_real_github_commits(request.repo_name, limit=request.limit)
+        # Fetch and store in the DB, getting processed log IDs
+        log_ids = fetch_real_github_commits(request.repo_name, limit=request.limit)
         
-        # Pull all logs to run detection
         db = SessionLocal()
-        logs = db.query(ActivityLog).all()
+        # Query only the logs belonging to these IDs
+        logs = db.query(ActivityLog).filter(ActivityLog.id.in_(log_ids)).all()
         data = []
         for log in logs:
             data.append({
@@ -170,6 +170,14 @@ async def fetch_github(request: GitHubRepoRequest):
             })
         db.close()
         
+        if not data:
+            return AnomalyResponse(
+                status="success",
+                total_logs_processed=0,
+                anomalies_detected=0,
+                anomalies=[]
+            )
+            
         df = pd.DataFrame(data)
         return process_dataframe(df)
     except Exception as e:
