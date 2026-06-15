@@ -755,6 +755,17 @@ function anomalyCardHTML(a, idx) {
   const platClass = plat.toLowerCase().replace(' ', '-');
   const svgCrit = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
   const svgWarn = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  
+  const isCollabPlatform = plat === 'Google Docs' || plat === 'Google Colab';
+  const resolveBtnHTML = isCollabPlatform ? `
+    <div class="anomaly-actions" style="margin-top: 0.75rem;">
+      <button class="btn-resolve-conflict" 
+              onclick="resolveAnomalyConflict('${escHTML(a.file_path).replace(/'/g, "\\'")}', '${escHTML(a.platform).replace(/'/g, "\\'")}', '${escHTML(a.developer_name).replace(/'/g, "\\'")}', this)"
+              style="padding: 5px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--green); cursor: pointer; transition: var(--transition);">
+        Resolve Conflict
+      </button>
+    </div>` : '';
+
   return `
     <div class="anomaly-card ${a.severity}" style="animation-delay:${idx * 60}ms">
       <div class="anomaly-severity-icon">${a.severity === 'Critical' ? svgCrit : svgWarn}</div>
@@ -774,6 +785,7 @@ function anomalyCardHTML(a, idx) {
             <span class="mono">${fp}</span>
           </div>
         </div>
+        ${resolveBtnHTML}
       </div>
       <span class="anomaly-timestamp">${ts}</span>
     </div>`;
@@ -900,3 +912,44 @@ function escHTML(str) {
   d.textContent = str || '';
   return d.innerHTML;
 }
+
+window.resolveAnomalyConflict = async (filePath, platform, developerName, btn) => {
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = state.lang === 'hi' ? 'सुलझा रहे हैं...' : 'Resolving...';
+
+  const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
+  try {
+    const res = await fetch(`${base}/resolve-conflict/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_path: filePath,
+        platform: platform,
+        developer_name: developerName
+      })
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    
+    showToast('success', 
+      state.lang === 'hi' ? 'सुलझाया गया' : 'Resolved', 
+      data.message || 'Conflict resolved successfully.'
+    );
+
+    // Disable button and change appearance
+    btn.textContent = state.lang === 'hi' ? 'सुलझाया गया ✓' : 'Resolved ✓';
+    btn.style.background = 'rgba(16, 185, 129, 0.08)';
+    btn.style.borderColor = 'rgba(16, 185, 129, 0.15)';
+    btn.style.color = 'var(--text-lo)';
+    btn.style.cursor = 'not-allowed';
+    btn.onclick = null; // Prevent double trigger
+  } catch (err) {
+    showToast('error', 
+      state.lang === 'hi' ? 'त्रुटि' : 'Error', 
+      err.message || 'Failed to resolve conflict.'
+    );
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+};

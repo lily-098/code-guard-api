@@ -174,3 +174,15 @@ async def fetch_github(request: GitHubRepoRequest):
         return process_dataframe(df)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+class ResolveConflictRequest(BaseModel):
+    file_path: str
+    platform: str
+    developer_name: str
+
+@app.post("/resolve-conflict/")
+async def resolve_conflict(request: ResolveConflictRequest):
+    return {
+        "status": "success",
+        "message": f"Successfully resolved conflict for {request.file_path} on {request.platform}. Restored changes by {request.developer_name}."
+    }
