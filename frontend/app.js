@@ -239,6 +239,7 @@ const els = {
   modalOverlay:      $('modalOverlay'),
   modalClose:        $('modalClose'),
   githubRepoName:    $('githubRepoName'),
+  githubToken:       $('githubToken'),
   btnAnalyzeGithub:  $('btnAnalyzeGithub'),
   platformFilterTabs:$('platformFilterTabs'),
 };
@@ -627,7 +628,8 @@ async function runGitHubAnalysis() {
       },
       body: JSON.stringify({
         repo_name: repo,
-        limit: 15
+        limit: 15,
+        github_token: els.githubToken.value.trim() || null
       }),
       signal: AbortSignal.timeout(30000)
     });

@@ -45,6 +45,7 @@ from pydantic import BaseModel
 class GitHubRepoRequest(BaseModel):
     repo_name: str
     limit: Optional[int] = 15
+    github_token: Optional[str] = None
 
 def process_dataframe(df: pd.DataFrame):
     df_features = extract_features(df)
@@ -154,7 +155,7 @@ async def fetch_github(request: GitHubRepoRequest):
     try:
         from src.github_fetcher import fetch_real_github_commits
         # Fetch and store in the DB, getting processed log IDs
-        log_ids = fetch_real_github_commits(request.repo_name, limit=request.limit)
+        log_ids = fetch_real_github_commits(request.repo_name, limit=request.limit, github_token=request.github_token)
         
         db = SessionLocal()
         # Query only the logs belonging to these IDs

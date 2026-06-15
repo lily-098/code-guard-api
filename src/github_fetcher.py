@@ -11,10 +11,12 @@ def parse_github_repo(repo_input: str):
         return f"{parts[0]}/{parts[1]}"
     return repo_input
 
-def fetch_real_github_commits(repo_identifier: str, limit: int = 15):
+def fetch_real_github_commits(repo_identifier: str, limit: int = 15, github_token: str = None):
     repo = parse_github_repo(repo_identifier)
     url = f"https://api.github.com/repos/{repo}/commits"
     headers = {"Accept": "application/vnd.github.v3+json"}
+    if github_token:
+        headers["Authorization"] = f"token {github_token}"
     
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
