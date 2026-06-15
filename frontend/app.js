@@ -629,7 +629,7 @@ async function runGitHubAnalysis() {
       body: JSON.stringify({
         repo_name: repo,
         limit: 15,
-        github_token: els.githubToken.value.trim() || null
+        github_token: (els.githubToken ? els.githubToken.value.trim() : null) || null
       }),
       signal: AbortSignal.timeout(30000)
     });
