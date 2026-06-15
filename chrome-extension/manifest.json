@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "CodeGuard Anomaly Scanner",
+  "version": "1.0",
+  "description": "Scans your active GitHub repository, Google Doc, or Google Colab tab for security threats and collaboration anomalies.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

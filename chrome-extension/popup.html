@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeGuard Scanner</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="extension-container">
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="logo">
+        <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+          <path d="M14 2L3 8v12l11 6 11-6V8L14 2z" stroke="url(#logoGrad)" stroke-width="1.8" fill="none"/>
+          <circle cx="14" cy="14" r="3.5" fill="url(#logoGrad)"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="3" y1="2" x2="25" y2="26" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#818cf8"/><stop offset="1" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">CodeGuard</span>
+      </div>
+      <div class="status-badge" id="statusBadge">Active</div>
+    </header>
+
+    <!-- ===== LOADING SCREEN ===== -->
+    <div class="view-panel" id="viewLoading">
+      <div class="scanner-wrap">
+        <div class="scanner-circle"></div>
+        <div class="scanner-line"></div>
+      </div>
+      <h3 class="loading-title">Analyzing Active Tab...</h3>
+      <p class="loading-desc">Inspecting code files and changes for security leaks or suspicious command scripts.</p>
+    </div>
+
+    <!-- ===== RESULTS SCREEN ===== -->
+    <div class="view-panel hidden" id="viewResults">
+      <div class="results-stats">
+        <div class="stat-bubble critical">
+          <span class="bubble-num" id="statCrit">0</span>
+          <span class="bubble-label">Critical</span>
+        </div>
+        <div class="stat-bubble warning">
+          <span class="bubble-num" id="statWarn">0</span>
+          <span class="bubble-label">Warning</span>
+        </div>
+      </div>
+
+      <div class="all-clear hidden" id="allClear">
+        <div class="clear-icon">✓</div>
+        <h3>No Threats Found!</h3>
+        <p>This document is clean of API keys, credential exposures, and shell exploits.</p>
+      </div>
+
+      <div class="anomalies-list" id="anomaliesList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <button class="btn-primary" id="btnDashboard">Open Main Dashboard</button>
+    </div>
+
+    <!-- ===== FALLBACK SCREEN ===== -->
+    <div class="view-panel hidden" id="viewFallback">
+      <div class="fallback-icon">⚠</div>
+      <h3 class="fallback-title">Unsupported Webpage</h3>
+      <p class="fallback-desc">Navigate to any of the following supported platforms to run an active scan:</p>
+      <ul class="fallback-list">
+        <li>GitHub Repository (e.g. <code>github.com/owner/repo</code>)</li>
+        <li>Google Doc shared link</li>
+        <li>Google Colab Python notebook</li>
+      </ul>
+      <button class="btn-ghost" id="btnOpenDashboardFallback">Launch CodeGuard Platform</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

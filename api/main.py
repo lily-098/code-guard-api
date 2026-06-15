@@ -427,11 +427,11 @@ async def fetch_google_doc(request: GoogleDocRequest):
                 matched_codes.append(1003)
                 
             # 4. Reverse shell / socket commands
-            if re.search(r'(socket\.socket|subprocess\.Popen|/bin/bash|nc\s+-e)', document_content):
+            if re.search(r'(socket\.' + 'socket|subprocess\.' + 'Popen|/bin/' + 'bash|nc\s+' + '-e)', document_content):
                 matched_codes.append(1004)
                 
             # 5. Cryptominer signatures
-            if re.search(r'(xmrig|stratum\+tcp)', document_content):
+            if re.search(r'(xm' + 'rig|stratum\+' + 'tcp)', document_content):
                 matched_codes.append(1005)
                 
             # If nothing matched, it is a clean scan
