@@ -241,6 +241,10 @@ const els = {
   githubRepoName:    $('githubRepoName'),
   githubToken:       $('githubToken'),
   btnAnalyzeGithub:  $('btnAnalyzeGithub'),
+  googleDocUrl:      $('googleDocUrl'),
+  googleToken:       $('googleToken'),
+  googleDocDemoMode: $('googleDocDemoMode'),
+  btnAnalyzeGoogleDoc:$('btnAnalyzeGoogleDoc'),
   platformFilterTabs:$('platformFilterTabs'),
 };
 
@@ -487,6 +491,9 @@ function bindEvents() {
   // Analyze Github Repo
   els.btnAnalyzeGithub.addEventListener('click', runGitHubAnalysis);
 
+  // Analyze Google Doc
+  els.btnAnalyzeGoogleDoc.addEventListener('click', runGoogleDocAnalysis);
+
   // Export
   els.btnExport.addEventListener('click', exportJSON);
 
@@ -688,6 +695,86 @@ async function runGitHubAnalysis() {
   } finally {
     els.btnAnalyzeGithub.disabled = false;
     els.btnAnalyzeGithub.textContent = originalText;
+  }
+}
+
+async function runGoogleDocAnalysis() {
+  const url = els.googleDocUrl.value.trim();
+  if (!url) return;
+  const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
+
+  els.btnAnalyzeGoogleDoc.disabled = true;
+  const originalText = els.btnAnalyzeGoogleDoc.textContent;
+  els.btnAnalyzeGoogleDoc.textContent = state.lang === 'hi' ? 'विश्लेषण...' : 'Analyzing...';
+
+  try {
+    const res = await fetch(`${base}/fetch-google-doc/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        doc_url: url,
+        google_token: (els.googleToken ? els.googleToken.value.trim() : null) || null,
+        use_demo: els.googleDocDemoMode ? els.googleDocDemoMode.checked : false
+      }),
+      signal: AbortSignal.timeout(30000)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || `Server error ${res.status}`);
+    }
+    const data = await res.json();
+
+    if (data.status === 'error') {
+      showToast('error',
+        state.lang === 'hi' ? 'विश्लेषण विफल' : 'Analysis failed',
+        data.message || ''
+      );
+      return;
+    }
+
+    state.lastResponse   = data;
+    state.allAnomalies   = data.anomalies || [];
+    state.filter         = 'all';
+    state.platformFilter = 'all';
+    state.page           = 1;
+
+    // Reset UI active states
+    document.querySelectorAll('#filterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#filterTabs .filter-tab[data-filter="all"]').classList.add('active');
+    document.querySelectorAll('#platformFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('#platformFilterTabs .filter-tab[data-platform="all"]').classList.add('active');
+
+    renderStats(data);
+    applyFilterAndRender();
+    renderTimeline();
+
+    setTimeout(() => {
+      els.resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+
+    const count = data.anomalies_detected;
+    const crit  = state.allAnomalies.filter(a => a.severity === 'Critical').length;
+    if (count === 0) {
+      showToast('success', t('allClear'), t('noneFound'));
+    } else {
+      showToast(crit > 0 ? 'error' : 'info',
+        `${count} ${count === 1 ? t('anomaly') : t('anomalies')}`,
+        crit > 0
+          ? (state.lang === 'hi' ? `${crit} गंभीर समस्याएं तुरंत ध्यान चाहती हैं!` : `${crit} critical issue(s) need immediate attention!`)
+          : (state.lang === 'hi' ? 'नीचे सावधानी घटनाओं की समीक्षा करें।' : 'Review the warning events below.')
+      );
+    }
+  } catch (err) {
+    showToast('error',
+      state.lang === 'hi' ? 'कनेक्शन विफल' : 'Connection failed',
+      err.message || (state.lang === 'hi' ? 'API से कनेक्ट नहीं हो सका।' : 'Unable to reach the API.')
+    );
+  } finally {
+    els.btnAnalyzeGoogleDoc.disabled = false;
+    els.btnAnalyzeGoogleDoc.textContent = originalText;
   }
 }
 

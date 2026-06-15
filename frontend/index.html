@@ -203,6 +203,17 @@
           <button class="btn-test" id="btnAnalyzeGithub" style="background: linear-gradient(to right, var(--accent-blue), var(--accent-purple)); border: none; color: white; flex-shrink: 0;">Analyze Repository</button>
         </div>
       </div>
+      <div class="config-row" style="margin-bottom: 0; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+        <div class="config-input-wrap" style="width: 100%; gap: 10px; flex-wrap: wrap;">
+          <input type="text" id="googleDocUrl" class="config-input" placeholder="Paste Google Doc or Colab Notebook Link (e.g., https://docs.google.com/document/d/...)" style="flex: 2; min-width: 250px;" />
+          <input type="password" id="googleToken" class="config-input" placeholder="Google Access Token (Optional)" style="flex: 1; min-width: 180px;" />
+          <button class="btn-test" id="btnAnalyzeGoogleDoc" style="background: linear-gradient(to right, var(--cyan), var(--primary)); border: none; color: white; flex-shrink: 0;">Analyze Document</button>
+        </div>
+        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 8px; width: 100%;">
+          <input type="checkbox" id="googleDocDemoMode" style="cursor: pointer; width: 14px; height: 14px;" />
+          <label for="googleDocDemoMode" style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; user-select: none;">Enable Demo / Simulation Mode (No Token Required)</label>
+        </div>
+      </div>
     </div>
 
     <!-- Upload Panel -->
