@@ -88,12 +88,16 @@ def fetch_real_github_commits(repo_identifier: str, limit: int = 15, github_toke
     if github_token:
         headers["Authorization"] = f"token {github_token}"
     
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            return generate_fallback_github_commits(repo, limit)
-    except Exception:
-        return generate_fallback_github_commits(repo, limit)
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        msg = ""
+        try:
+            msg = response.json().get('message', '')
+        except Exception:
+            msg = response.text
+        if response.status_code == 403:
+            raise Exception(f"GitHub API Rate Limit Exceeded. Please input a Personal Access Token in the input box to analyze your real repository commits. ({msg})")
+        raise Exception(f"Failed to fetch commits from GitHub API. Status code: {response.status_code}. Message: {msg}")
     
     commits_data = response.json()
     db = SessionLocal()
