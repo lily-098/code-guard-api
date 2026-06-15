@@ -73,8 +73,8 @@ const TRANSLATIONS = {
     voiceScript: `Welcome to CodeGuard — the AI-powered Code Collaboration Anomaly Detection System.
 This system monitors developer activity in your codebase and automatically detects suspicious behaviour such as:
 One — Mass code deletions, where a developer deletes an unusually large number of lines.
-Two — Off-hours activity, where code is committed late at night, outside normal working hours.
-Three — File conflicts, where multiple developers modify the same file simultaneously.
+Two — Merge conflict risks, where multiple developers edit the same file concurrently without pulling.
+Three — Large volume code uploads, where massive commits are pushed at once.
 
 How to use this system:
 Step 1 — Make sure the backend API is running. Open a terminal and run: uvicorn api.main:app --port 8005.
@@ -153,8 +153,8 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
     voiceScript: `CodeGuard में आपका स्वागत है — यह एक AI-आधारित कोड सहयोग असामान्यता पहचान प्रणाली है।
 यह प्रणाली आपके कोडबेस में डेवलपर्स की गतिविधियों पर नज़र रखती है और स्वचालित रूप से संदिग्ध व्यवहार पहचानती है, जैसे:
 पहला — बड़े पैमाने पर कोड हटाना, जहाँ कोई डेवलपर असामान्य रूप से बड़ी संख्या में कोड लाइनें मिटा देता है।
-दूसरा — असामान्य समय की गतिविधि, जहाँ सामान्य काम के घंटों के बाहर, देर रात को कोड जमा किया जाता है।
-तीसरा — फ़ाइल विवाद, जहाँ कई डेवलपर्स एक ही समय में एक ही फ़ाइल में बदलाव करते हैं।
+दूसरा — मर्ज संघर्ष जोखिम, जहाँ कई डेवलपर्स बिना सिंक किए एक ही समय में एक ही फ़ाइल में बदलाव करते हैं।
+तीसरा — भारी मात्रा में कोड अपलोड, जहाँ एक साथ बड़े कमिट पुश किए जाते हैं।
 
 इस प्रणाली का उपयोग कैसे करें:
 पहला चरण — सुनिश्चित करें कि बैकएंड API चल रहा है। टर्मिनल खोलें और चलाएं: uvicorn api.main:app --port 8005।

@@ -79,10 +79,13 @@ def process_dataframe(df: pd.DataFrame):
             desc = f"Massive content deletion detected on {platform}."
         elif row['file_recent_conflict_count'] > 2:
             severity = "Critical"
-            desc = f"High frequency of modifications by different developers on {platform}."
-        elif row['is_off_hours'] == 1:
+            desc = f"High risk of merge conflicts: Multiple concurrent edits on {platform}."
+        elif row['file_recent_conflict_count'] >= 1:
             severity = "Warning"
-            desc = f"Off-hours modification on {platform}."
+            desc = f"Merge Conflict Risk: Concurrent edits detected on {platform}."
+        else:
+            severity = "Warning"
+            desc = f"Large volume code modification on {platform}."
             
         dev_name = devs.get(row['developer_id'], f"Dev ID {row['developer_id']}")
         file_path = files.get(row['file_id'], f"File ID {row['file_id']}")
