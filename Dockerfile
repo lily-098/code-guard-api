@@ -8,7 +8,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Expose the port that GCP Cloud Run expects
+# Run simulation and training to bake the database and models into the image
+RUN python -m src.data_simulator && python -m models.train
+
+# Expose port (Render/Cloud Run will read this or inject PORT)
 EXPOSE 8080
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Start FastAPI binding to the dynamic PORT environment variable (default to 8080)
+CMD ["sh", "-c", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
