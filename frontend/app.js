@@ -302,12 +302,22 @@ function toggleLanguage() {
   );
 }
 
+// Helper for browser compatibility with AbortSignal.timeout on older mobile devices
+function getTimeoutSignal(ms) {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+
 // ── HEALTH CHECK ─────────────────────────────────────────────
 async function checkHealth() {
   const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
   setHealthState('checking');
   try {
-    const res = await fetch(`${base}/health/`, { signal: AbortSignal.timeout(30000) });
+    const res = await fetch(`${base}/health/`, { signal: getTimeoutSignal(30000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     els.offlineBanner.classList.add('hidden');
@@ -602,7 +612,7 @@ async function runAnalysis() {
     formData.append('file', state.file);
 
     const res = await fetch(`${base}/upload-log/`, {
-      method: 'POST', body: formData, signal: AbortSignal.timeout(30000),
+      method: 'POST', body: formData, signal: getTimeoutSignal(30000),
     });
 
     if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -682,7 +692,7 @@ async function runGitHubAnalysis() {
         limit: 15,
         github_token: (els.githubToken ? els.githubToken.value.trim() : null) || null
       }),
-      signal: AbortSignal.timeout(30000)
+      signal: getTimeoutSignal(30000)
     });
 
     if (!res.ok) {
@@ -762,7 +772,7 @@ async function runGoogleDocAnalysis() {
         google_token: (els.googleToken ? els.googleToken.value.trim() : null) || null,
         use_demo: els.googleDocDemoMode ? els.googleDocDemoMode.checked : false
       }),
-      signal: AbortSignal.timeout(30000)
+      signal: getTimeoutSignal(30000)
     });
 
     if (!res.ok) {
