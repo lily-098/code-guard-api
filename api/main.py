@@ -54,6 +54,12 @@ except FileNotFoundError:
     print("Warning: Models not found. Please train models first.")
     iso_forest, scaler = None, None
 
+from fastapi.responses import RedirectResponse
+
+@app.get("/")
+def read_root():
+    return RedirectResponse(url="/docs")
+
 @app.get("/health/")
 def health_check():
     return {"status": "healthy", "models_loaded": iso_forest is not None}

@@ -168,7 +168,7 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
 };
 
 // ── CONFIG & STATE ────────────────────────────────────────────
-const DEFAULT_API = 'http://localhost:8005';
+const DEFAULT_API = 'https://code-collaboration-anomaly-detection.onrender.com';
 const PAGE_SIZE   = 8;
 
 const state = {
@@ -246,6 +246,12 @@ const els = {
   googleDocDemoMode: $('googleDocDemoMode'),
   btnAnalyzeGoogleDoc:$('btnAnalyzeGoogleDoc'),
   platformFilterTabs:$('platformFilterTabs'),
+  navToggleBtn:      $('navToggleBtn'),
+  mobileMenuDrawer:  $('mobileMenuDrawer'),
+  mobileMenuClose:   $('mobileMenuClose'),
+  mobDashboard:      $('mobDashboard'),
+  mobAnalyze:        $('mobAnalyze'),
+  mobDocs:           $('mobDocs'),
 };
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -301,7 +307,7 @@ async function checkHealth() {
   const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
   setHealthState('checking');
   try {
-    const res = await fetch(`${base}/health/`, { signal: AbortSignal.timeout(5000) });
+    const res = await fetch(`${base}/health/`, { signal: AbortSignal.timeout(30000) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     els.offlineBanner.classList.add('hidden');
@@ -427,6 +433,44 @@ function bindEvents() {
     const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
     window.open(`${base}/docs`, '_blank');
   });
+
+  // Mobile Menu Interaction
+  const closeMobileMenu = () => {
+    els.mobileMenuDrawer.classList.remove('open');
+  };
+  if (els.navToggleBtn && els.mobileMenuDrawer && els.mobileMenuClose) {
+    els.navToggleBtn.addEventListener('click', () => {
+      els.mobileMenuDrawer.classList.add('open');
+    });
+    els.mobileMenuClose.addEventListener('click', closeMobileMenu);
+    els.mobileMenuDrawer.addEventListener('click', e => {
+      if (e.target === els.mobileMenuDrawer) closeMobileMenu();
+    });
+
+    els.mobDashboard.addEventListener('click', e => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setActiveNav(els.navDashboard);
+      // Synchronize desktop nav highlight
+      setActiveNav(els.navDashboard);
+      closeMobileMenu();
+    });
+    els.mobAnalyze.addEventListener('click', e => {
+      e.preventDefault();
+      const target = $('githubPanel') || document.querySelector('.upload-panel');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveNav(els.navAnalyze);
+      // Synchronize desktop nav highlight
+      setActiveNav(els.navAnalyze);
+      closeMobileMenu();
+    });
+    els.mobDocs.addEventListener('click', e => {
+      e.preventDefault();
+      const base = els.apiEndpoint.value.trim().replace(/\/$/, '');
+      window.open(`${base}/docs`, '_blank');
+      closeMobileMenu();
+    });
+  }
 
   // Hero buttons
   els.heroAnalyzeBtn.addEventListener('click', () => {
