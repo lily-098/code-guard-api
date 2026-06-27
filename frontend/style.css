@@ -32,13 +32,13 @@
   --transition:  all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: auto; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg-deep);
   color: var(--text-hi);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: auto;
   line-height: 1.6;
 }
 
