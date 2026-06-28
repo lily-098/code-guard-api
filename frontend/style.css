@@ -32,13 +32,13 @@
   --transition:  all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-html { scroll-behavior: smooth; overflow-x: auto; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg-deep);
   color: var(--text-hi);
   min-height: 100vh;
-  overflow-x: auto;
+  overflow-x: hidden;
   line-height: 1.6;
 }
 
@@ -602,6 +602,7 @@ body {
   .nav-center { display: none; }
   .nav-toggle-btn { display: flex; }
   .voice-btn span { display: none; }
+  .nav-right { gap: 8px; }
   
   .hero { padding: 100px 24px 48px; }
   .hero-title { font-size: 32px; }
@@ -665,7 +666,14 @@ body {
   .timeline { padding: 16px; }
 }
 
+@media (max-width: 576px) {
+  .health-label { display: none; }
+  .health-badge { padding: 6px 10px; }
+  .btn-refresh { display: none; }
+}
+
 @media (max-width: 480px) {
+  .brand-sub { display: none; }
   .stats-row { grid-template-columns: 1fr; }
   .hero-title { font-size: 26px; }
   .hero-actions .btn-primary, .hero-actions .btn-ghost { width: 100%; justify-content: center; }
@@ -673,5 +681,10 @@ body {
   .config-input-wrap button { width: 100%; justify-content: center; }
   .modal { padding: 24px 16px; }
   .schema-row { grid-template-columns: 1fr; gap: 4px; padding: 10px; }
-  .schema-row.header { display: none; } /* Hide layout header, stack key value labels */
+  .schema-row.header { display: none; }
+}
+
+@media (max-width: 400px) {
+  #langLabel { display: none; }
+  .lang-toggle { padding: 6px 10px; }
 }

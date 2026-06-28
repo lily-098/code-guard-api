@@ -19,6 +19,8 @@ const TRANSLATIONS = {
     heroLearnBtn:     'CSV Format Guide',
     uploadTitle:      'Upload Activity Logs',
     githubTitle:      'Real-time GitHub Repository Analysis',
+    githubTokenPlaceholder: 'GitHub Token (Optional to avoid 403)',
+    githubTokenPlaceholderMobile: 'GitHub Token (Optional)',
     configLabel:      'API Endpoint',
     testConn:         'Test Connection',
     dropMain:         'Drop your CSV file here',
@@ -100,6 +102,8 @@ Step 5 — Use the filter tabs to sort by severity, and export the report as JSO
     heroLearnBtn:     'CSV फॉर्मेट गाइड',
     uploadTitle:      'गतिविधि लॉग अपलोड करें',
     githubTitle:      'रीयल-टाइम GitHub रिपॉजिटरी विश्लेषण',
+    githubTokenPlaceholder: 'गिटहब टोकन (403 से बचने के लिए वैकल्पिक)',
+    githubTokenPlaceholderMobile: 'गिटहब टोकन (वैकल्पिक)',
     configLabel:      'API एंडपॉइंट',
     testConn:         'कनेक्शन जाँचें',
     dropMain:         'अपनी CSV फ़ाइल यहाँ छोड़ें',
@@ -283,6 +287,12 @@ function applyTranslations() {
       el.textContent = val;
     }
   });
+  // Update githubToken placeholder dynamically based on screen size (laptop vs mobile)
+  if (els.githubToken) {
+    els.githubToken.placeholder = window.innerWidth <= 480 
+      ? t('githubTokenPlaceholderMobile') 
+      : t('githubTokenPlaceholder');
+  }
   // Update html lang attr
   document.documentElement.lang = state.lang === 'hi' ? 'hi' : 'en';
   // Update voice panel script display
@@ -405,6 +415,15 @@ function bindEvents() {
     els.navbar.style.background = window.scrollY > 20
       ? 'rgba(6,11,24,0.97)'
       : 'rgba(6,11,24,0.88)';
+  });
+
+  // Window resize for dynamic placeholders
+  window.addEventListener('resize', () => {
+    if (els.githubToken) {
+      els.githubToken.placeholder = window.innerWidth <= 480 
+        ? t('githubTokenPlaceholderMobile') 
+        : t('githubTokenPlaceholder');
+    }
   });
 
   // Language toggle
